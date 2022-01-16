@@ -36,7 +36,7 @@ class ScoreFragment : Fragment() {
             inflater: LayoutInflater,
             container: ViewGroup?,
             savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         // Inflate view and obtain an instance of the binding class.
         val binding: ScoreFragmentBinding = DataBindingUtil.inflate(
