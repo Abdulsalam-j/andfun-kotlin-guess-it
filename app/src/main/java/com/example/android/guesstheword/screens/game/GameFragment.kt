@@ -17,7 +17,7 @@
 package com.example.android.guesstheword.screens.game
 
 import android.os.Bundle
-import android.util.Log
+import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -39,7 +39,6 @@ class GameFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View {
-
         // Inflate view and obtain an instance of the binding class
         binding = DataBindingUtil.inflate(
                 inflater,
@@ -48,21 +47,39 @@ class GameFragment : Fragment() {
                 false
         )
 
-        Log.i("GameFragment","ViewModelProvider called!!")
         gameVieModel = ViewModelProvider(this)[GameViewModel::class.java]
 
         binding.correctButton.setOnClickListener {
             gameVieModel.onCorrect()
-            updateScoreText()
-            updateWordText()
         }
         binding.skipButton.setOnClickListener {
             gameVieModel.onSkip()
-            updateScoreText()
-            updateWordText()
         }
-        updateScoreText()
-        updateWordText()
+
+        /**
+         * Start observing changes
+         */
+
+        gameVieModel.score.observe(viewLifecycleOwner) { newScore ->
+            binding.scoreText.text = newScore.toString()
+        }
+        gameVieModel.word.observe(viewLifecycleOwner) { newWord ->
+            binding.wordText.text = newWord
+        }
+
+        gameVieModel.currentTime.observe(viewLifecycleOwner) { newTime ->
+            // Using DateUtils.formatElapsedTime to return string formatted time
+            val formattedNewTime = DateUtils.formatElapsedTime(newTime)
+            binding.timerText.text = formattedNewTime
+        }
+
+        gameVieModel.eventGameFinish.observe(viewLifecycleOwner) { hasFinished ->
+            if (hasFinished == true){
+                gameFinished()
+                gameVieModel.onGameFinishComplete()
+            }
+        }
+
         return binding.root
     }
 
@@ -70,18 +87,7 @@ class GameFragment : Fragment() {
      * Called when the game is finished
      */
     private fun gameFinished() {
-        val action = GameFragmentDirections.actionGameToScore(gameVieModel.score)
+        val action = GameFragmentDirections.actionGameToScore(gameVieModel.score.value ?: 0)
         findNavController().navigate(action)
-    }
-
-    /** Methods for updating the UI **/
-
-    private fun updateWordText() {
-        binding.wordText.text = gameVieModel.word
-
-    }
-
-    private fun updateScoreText() {
-        binding.scoreText.text = gameVieModel.score.toString()
     }
 }
