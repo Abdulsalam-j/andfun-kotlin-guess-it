@@ -26,7 +26,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning"
-        android:fullBackupContent="@xml/backup_descriptor">
+        android:fullBackupContent="@xml/backup_descriptor"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        tools:targetApi="s">
 
         <!-- Screen locked to landscape for easier play -->
         <!-- configChanges attribute makes the following actions NOT cause a config change  -->

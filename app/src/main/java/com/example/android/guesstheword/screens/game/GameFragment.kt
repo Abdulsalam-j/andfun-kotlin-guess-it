@@ -74,7 +74,7 @@ class GameFragment : Fragment() {
         }
 
         gameVieModel.eventGameFinish.observe(viewLifecycleOwner) { hasFinished ->
-            if (hasFinished == true){
+            if (hasFinished){
                 gameFinished()
                 gameVieModel.onGameFinishComplete()
             }
