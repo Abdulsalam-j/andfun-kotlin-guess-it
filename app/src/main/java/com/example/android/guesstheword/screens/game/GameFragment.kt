@@ -16,11 +16,14 @@
 
 package com.example.android.guesstheword.screens.game
 
+import android.os.Build
 import android.os.Bundle
-import android.text.format.DateUtils
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.getSystemService
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -35,48 +38,39 @@ class GameFragment : Fragment() {
 
     private lateinit var binding: GameFragmentBinding
 
-    private lateinit var gameVieModel: GameViewModel
+    private lateinit var gameViewModel: GameViewModel
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         // Inflate view and obtain an instance of the binding class
         binding = DataBindingUtil.inflate(
-                inflater,
-                R.layout.game_fragment,
-                container,
-                false
+            inflater,
+            R.layout.game_fragment,
+            container,
+            false
         )
 
-        gameVieModel = ViewModelProvider(this)[GameViewModel::class.java]
+        gameViewModel = ViewModelProvider(this)[GameViewModel::class.java]
 
-        binding.correctButton.setOnClickListener {
-            gameVieModel.onCorrect()
-        }
-        binding.skipButton.setOnClickListener {
-            gameVieModel.onSkip()
-        }
+        // Set the binding ViewModel object to the gameViewModel object
+        binding.gameViewModel = gameViewModel
 
-        /**
-         * Start observing changes
-         */
+        // Add the lifecycleOwner to the binding
+        binding.lifecycleOwner = this
 
-        gameVieModel.score.observe(viewLifecycleOwner) { newScore ->
-            binding.scoreText.text = newScore.toString()
-        }
-        gameVieModel.word.observe(viewLifecycleOwner) { newWord ->
-            binding.wordText.text = newWord
+        gameViewModel.buzzType.observe(viewLifecycleOwner) { currentBuzzType ->
+            if (currentBuzzType != GameViewModel.BuzzType.NO_BUZZ) {
+                buzz(currentBuzzType.pattern)
+                gameViewModel.onBuzzComplete()
+            }
         }
 
-        gameVieModel.currentTime.observe(viewLifecycleOwner) { newTime ->
-            // Using DateUtils.formatElapsedTime to return string formatted time
-            val formattedNewTime = DateUtils.formatElapsedTime(newTime)
-            binding.timerText.text = formattedNewTime
-        }
-
-        gameVieModel.eventGameFinish.observe(viewLifecycleOwner) { hasFinished ->
-            if (hasFinished){
+        gameViewModel.eventGameFinish.observe(viewLifecycleOwner) { hasFinished ->
+            if (hasFinished) {
                 gameFinished()
-                gameVieModel.onGameFinishComplete()
+                gameViewModel.onGameFinishComplete()
             }
         }
 
@@ -84,10 +78,26 @@ class GameFragment : Fragment() {
     }
 
     /**
+     * Given a pattern, this method makes sure the device buzzes
+     */
+    private fun buzz(pattern: LongArray) {
+        val buzzer = activity?.getSystemService<Vibrator>()
+
+        buzzer?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                buzzer.vibrate(VibrationEffect.createWaveform(pattern, -1))
+            } else {
+                //deprecated in API 26
+                buzzer.vibrate(pattern, -1)
+            }
+        }
+    }
+
+    /**
      * Called when the game is finished
      */
     private fun gameFinished() {
-        val action = GameFragmentDirections.actionGameToScore(gameVieModel.score.value ?: 0)
+        val action = GameFragmentDirections.actionGameToScore(gameViewModel.score.value ?: 0)
         findNavController().navigate(action)
     }
 }
